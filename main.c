@@ -26,9 +26,7 @@ void DrawTextCenter(
     Color tint)
 {
     Vector2 text_size = MeasureTextEx(font, text, font_size, spacing);
-    Vector2 origin = {0};
-    position.x -= text_size.x / 2;
-    position.y -= text_size.y / 2;
+    Vector2 origin = { text_size.x / 2, text_size.y / 2 };
     DrawTextPro(font, text, position, origin, rotation, font_size, spacing, tint);
 }
 
@@ -46,13 +44,24 @@ int main(void) {
         BeginDrawing();
         ClearBackground(BLACK);
 
-        for (int ch = GetCharPressed(); ch != 0; ch = GetCharPressed()) {
-            if (vocab.current_attempt < VOCAB_ATTEMPTS_COUNT && isalpha(ch)) {
-                vocab.grid[vocab.current_attempt][vocab.cursor] = (char) ch;
-                vocab.cursor += 1;
-                if (vocab.cursor >= VOCAB_WORD_LENGTH) {
-                    vocab.current_attempt += 1;
-                    vocab.cursor = 0;
+        if (vocab.current_attempt < VOCAB_ATTEMPTS_COUNT) {
+            // Erase letter
+            if (vocab.cursor > 0 && IsKeyPressed(KEY_BACKSPACE)) {
+                vocab.grid[vocab.current_attempt][vocab.cursor - 1] = '\0';
+                vocab.cursor -= 1;
+            }
+
+            // Attempt word
+            if (vocab.cursor >= VOCAB_WORD_LENGTH && IsKeyPressed(KEY_ENTER)) {
+                vocab.current_attempt += 1;
+                vocab.cursor = 0;
+            }
+
+            // Type letter
+            for (int ch = GetCharPressed(); ch != 0; ch = GetCharPressed()) {
+                if (vocab.cursor < VOCAB_WORD_LENGTH && isalpha(ch)) {
+                    vocab.grid[vocab.current_attempt][vocab.cursor] = (char) ch;
+                    vocab.cursor += 1;
                 }
             }
         }
