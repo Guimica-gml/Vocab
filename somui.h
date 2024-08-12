@@ -4,14 +4,14 @@
 #include <stdlib.h>
 
 #define DA_INIT_CAP 16
-#define da_append(da, item)                                                            \
-    do {                                                                               \
-        if ((da)->count >= (da)->capacity) {                                           \
-            (da)->capacity = (da)->capacity == 0 ? DA_INIT_CAP : (da)->capacity * 2;   \
+#define somui_da_append(da, item)                                       \
+    do {                                                                \
+        if ((da)->count >= (da)->capacity) {                            \
+            (da)->capacity = (da)->capacity == 0 ? DA_INIT_CAP : (da)->capacity * 2; \
             (da)->items = realloc((da)->items, (da)->capacity * sizeof(*(da)->items)); \
-            assert((da)->items != NULL && "Error: not enough RAM");                    \
-        }                                                                              \
-        (da)->items[(da)->count++] = (item);                                           \
+            assert((da)->items != NULL && "Error: not enough RAM");     \
+        }                                                               \
+        (da)->items[(da)->count++] = (item);                            \
     } while (0)
 
 typedef enum {
@@ -89,7 +89,7 @@ void ui_layout_begin(UI_Stack *stack, UI_Rect rect, UI_Orientation ori, UI_Margi
     layout.capacity = cap;
     layout.margin = margin;
     layout.gap = gap;
-    da_append(stack, layout);
+    somui_da_append(stack, layout);
 }
 
 void ui_layout_end(UI_Stack *stack) {

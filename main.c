@@ -1,38 +1,76 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <ctype.h>
 #include <raylib.h>
 
 #define SOMUI_IMPLEMENTATION
 #include "./somui.h"
 
+// Because I want the da_* functions
+#include "./comp.h"
+
 #define VOCAB_ATTEMPTS_COUNT 6
 #define VOCAB_WORD_LENGTH 5
+
+#include "words.c"
+
+#define HASH_SET_CSTR_CAP 512
+
+typedef struct {
+    Da_Cstr buckets[HASH_SET_CSTR_CAP];
+} Hash_Set_Cstr;
+
+size_t hash_cstr(Cstr cstr) {
+    size_t hash = 0;
+    while (*cstr++ != '\0') {
+        hash = hash * 13 + (size_t)*cstr;
+    }
+    return hash;
+}
+
+void hash_set_cstr_insert(Hash_Set_Cstr *set, Cstr cstr) {
+    size_t index = hash_cstr(cstr) % HASH_SET_CSTR_CAP;
+    Da_Cstr *bucket = &set->buckets[index];
+    da_append(bucket, cstr);
+}
+
+bool hash_set_cstr_contains(Hash_Set_Cstr *set, Cstr cstr) {
+    size_t index = hash_cstr(cstr) % HASH_SET_CSTR_CAP;
+    Da_Cstr *bucket = &set->buckets[index];
+    for (size_t i = 0; i < bucket->count; ++i) {
+        if (strcmp(cstr, bucket->items[i]) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static Hash_Set_Cstr words_set = {0};
+
+typedef enum {
+    VOCAB_BLACK,
+    VOCAB_GRAY,
+    VOCAB_YELLOW,
+    VOCAB_GREEN,
+} Vocab_Color;
 
 typedef struct {
     const char word[VOCAB_WORD_LENGTH];
     char grid[VOCAB_ATTEMPTS_COUNT][VOCAB_WORD_LENGTH];
+    Vocab_Color color_grid[VOCAB_ATTEMPTS_COUNT][VOCAB_WORD_LENGTH];
     size_t current_attempt;
     size_t cursor;
 } Vocab;
 
-void DrawTextCenter(
-    Font font,
-    const char *text,
-    Vector2 position,
-    float rotation,
-    float font_size,
-    float spacing,
-    Color tint)
-{
-    Vector2 text_size = MeasureTextEx(font, text, font_size, spacing);
-    Vector2 origin = { text_size.x / 2, text_size.y / 2 };
-    DrawTextPro(font, text, position, origin, rotation, font_size, spacing, tint);
-}
-
 int main(void) {
     SetTraceLogLevel(LOG_WARNING);
     InitWindow(1280, 720, "Vocab");
+
+    // Preparing the words set
+    for (size_t i = 0; i < words_count; ++i) {
+        hash_set_cstr_insert(&words_set, words[i]);
+    }
 
     Vocab vocab = {0};
     UI_Stack ui = {0};
@@ -53,8 +91,14 @@ int main(void) {
 
             // Attempt word
             if (vocab.cursor >= VOCAB_WORD_LENGTH && IsKeyPressed(KEY_ENTER)) {
-                vocab.current_attempt += 1;
-                vocab.cursor = 0;
+                char word[VOCAB_WORD_LENGTH + 1] = {0};
+                strncpy(word, vocab.grid[vocab.current_attempt], VOCAB_WORD_LENGTH);
+
+                bool contains = hash_set_cstr_contains(&words_set, word);
+                if (contains) {
+                    vocab.current_attempt += 1;
+                    vocab.cursor = 0;
+                }
             }
 
             // Type letter
@@ -91,8 +135,12 @@ int main(void) {
                 UI_Rect square = ui_layout_rect(&ui);
                 DrawRectangleLines(square.x, square.y, square.w, square.h, WHITE);
 
+                int spacing = 6;
+                const char *text = TextFormat("%c", toupper(vocab.grid[i][j]));
                 Vector2 text_pos = { square.x + square.w / 2, square.y + square.h / 2 };
-                DrawTextCenter(font, TextFormat("%c", toupper(vocab.grid[i][j])), text_pos, 0.0f, font_size, 6, WHITE);
+                Vector2 text_size = MeasureTextEx(font, text, font_size, spacing);
+                Vector2 origin = { text_size.x / 2, text_size.y / 2 };
+                DrawTextPro(font, text, text_pos, origin, 0.0f, font_size, spacing, WHITE);
             }
             ui_layout_end(&ui);
         }
