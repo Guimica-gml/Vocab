@@ -64,9 +64,8 @@ void build_raylib(void) {
 int main(int argc, const char **argv) {
     rebuild_self("gcc", argc, argv);
 
-    if (access(RAYLIB_LIB_PATH"libraylib.a", F_OK) != 0) {
-        build_raylib();
-    }
+    // TODO(nic): add caching of raylib later
+    build_raylib();
 
     Cmd cmd = {0};
     cmd_append(&cmd, "x86_64-w64-mingw32-gcc", CFLAGS, "-o", EXE_FILEPATH, "./main.c", CLIBS);
