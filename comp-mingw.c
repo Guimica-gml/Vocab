@@ -26,7 +26,8 @@ void build_raylib(void) {
 
     String lib = {0};
     string_append_cstr(&lib, RAYLIB_LIB_PATH);
-    string_append_cstr(&lib, "libraylib.a\0");
+    string_append_cstr(&lib, "libraylib.a");
+    string_append_null(&lib);
 
     Cmd cmd_rl = {0};
     cmd_append(&cmd_rl, "x86_64-w64-mingw32-ar", "-crs", lib.items);
@@ -35,12 +36,14 @@ void build_raylib(void) {
         String unit = {0};
         string_append_cstr(&unit, RAYLIB_SRC_PATH);
         string_append_cstr(&unit, raylib_units[i]);
-        string_append_cstr(&unit, ".c\0");
+        string_append_cstr(&unit, ".c");
+        string_append_null(&lib);
 
         String obj = {0};
         string_append_cstr(&obj, RAYLIB_LIB_PATH);
         string_append_cstr(&obj, raylib_units[i]);
-        string_append_cstr(&obj, ".o\0");
+        string_append_cstr(&obj, ".o");
+        string_append_null(&lib);
 
         cmd_append(&cmd_rl, obj.items);
 
@@ -59,7 +62,7 @@ void build_raylib(void) {
 #define CLIBS "-I"RAYLIB_SRC_PATH, "-L"RAYLIB_LIB_PATH, "-l:libraylib.a", "-lm", "-lwinmm", "-lgdi32"
 
 int main(int argc, const char **argv) {
-    rebuild_self("x86_64-w64-mingw32-gcc", argc, argv);
+    rebuild_self("gcc", argc, argv);
 
     if (access(RAYLIB_LIB_PATH"libraylib.a", F_OK) != 0) {
         build_raylib();

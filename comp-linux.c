@@ -28,7 +28,8 @@ void build_raylib(void) {
 
     String lib = {0};
     string_append_cstr(&lib, RAYLIB_LIB_PATH);
-    string_append_cstr(&lib, "libraylib.a\0");
+    string_append_cstr(&lib, "libraylib.a");
+    string_append_null(&lib);
 
     Cmd cmd_rl = {0};
     cmd_append(&cmd_rl, "ar", "-crs", lib.items);
@@ -37,12 +38,14 @@ void build_raylib(void) {
         String unit = {0};
         string_append_cstr(&unit, RAYLIB_SRC_PATH);
         string_append_cstr(&unit, raylib_units[i]);
-        string_append_cstr(&unit, ".c\0");
+        string_append_cstr(&unit, ".c");
+        string_append_null(&unit);
 
         String obj = {0};
         string_append_cstr(&obj, RAYLIB_LIB_PATH);
         string_append_cstr(&obj, raylib_units[i]);
-        string_append_cstr(&obj, ".o\0");
+        string_append_cstr(&obj, ".o");
+        string_append_null(&obj);
 
         cmd_append(&cmd_rl, obj.items);
 

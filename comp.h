@@ -9,14 +9,11 @@
 #include <errno.h>
 #include <time.h>
 
-// TODO(nic): this is posix only
-//            make this code work on windows later!
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
 
-#define CMD_DEFAULT_CAP 1024
-#define STRING_DEFAULT_CAP 1024
+#define DA_DEFAULT_CAP 1024
 
 // Used for *null terminated* strings
 typedef const char *Cstr;
@@ -39,7 +36,7 @@ typedef Da_Cstr Cmd;
     do {                                                                \
         if ((da)->count >= (da)->capacity) {                            \
             size_t new_cap = ((da)->capacity == 0)                      \
-                ? CMD_DEFAULT_CAP                                       \
+                ? DA_DEFAULT_CAP                                        \
                 : (da)->capacity * 2;                                   \
             (da)->items = realloc((da)->items, new_cap * sizeof(*(da)->items)); \
             assert((da)->items != NULL && "Error: not enough RAM");     \
@@ -52,7 +49,7 @@ typedef Da_Cstr Cmd;
     do {                                                                \
         if ((da)->capacity < (da)->count + items_count) {               \
             size_t new_cap = ((da)->capacity == 0)                      \
-                ? CMD_DEFAULT_CAP                                       \
+                ? DA_DEFAULT_CAP                                        \
                 : (da)->capacity;                                       \
             while (new_cap < (da)->count + items_count) {               \
                 new_cap *= 2;                                           \
@@ -76,6 +73,9 @@ typedef Da_Cstr Cmd;
         (string),                                   \
         (cstr),                                     \
         strlen(cstr))
+
+#define string_append_null(string) \
+    da_append((string), '\0')
 
 #define rebuild_self(compiler_path, argc, argv)                 \
     rebuild_self_impl(compiler_path, (argc), (argv), __FILE__)  \
@@ -116,7 +116,8 @@ void rebuild_self_impl(Cstr compiler_path, int argc, const char **argv, Cstr src
 
         String old_exe_filepath = {0};
         string_append_cstr(&old_exe_filepath, exe_filepath);
-        string_append_cstr(&old_exe_filepath, ".old\0");
+        string_append_cstr(&old_exe_filepath, ".old");
+        string_append_null(&old_exe_filepath);
 
         cmd.count = 0;
         cmd_append(&cmd, "mv", exe_filepath, old_exe_filepath.items);
@@ -167,9 +168,9 @@ int pid_wait(pid_t pid) {
 int cmd_exec(Cmd *cmd) {
     printf("[CMD]: ");
     for (size_t i = 0; i < cmd->count; ++i) {
-        printf("%s ", cmd->items[i]);
+        printf("%s", cmd->items[i]);
+        printf("%s", (i >= cmd->count - 1) ? "\n" : " ");
     }
-    printf("\n");
 
     pid_t cpid = fork();
     if (cpid < 0) {

@@ -13,6 +13,7 @@
 #define VOCAB_ATTEMPTS_COUNT 6
 #define VOCAB_WORD_LENGTH 5
 
+// Put the words in a separate file
 #include "words.c"
 
 #define HASH_SET_CSTR_CAP 512
@@ -49,14 +50,14 @@ bool hash_set_cstr_contains(Hash_Set_Cstr *set, Cstr cstr) {
 static Hash_Set_Cstr words_set = {0};
 
 typedef enum {
-    VOCAB_BLACK,
+    VOCAB_BLACK = 0,
     VOCAB_GRAY,
     VOCAB_YELLOW,
     VOCAB_GREEN,
 } Vocab_Color;
 
 typedef struct {
-    const char word[VOCAB_WORD_LENGTH];
+    const char *word;
     char grid[VOCAB_ATTEMPTS_COUNT][VOCAB_WORD_LENGTH];
     Vocab_Color color_grid[VOCAB_ATTEMPTS_COUNT][VOCAB_WORD_LENGTH];
     size_t current_attempt;
@@ -74,6 +75,13 @@ int main(void) {
 
     Vocab vocab = {0};
     UI_Stack ui = {0};
+
+    // Choose random world
+    {
+        srand(time(NULL));
+        size_t random_index = rand() % words_count;
+        vocab.word = words[random_index];
+    }
 
     Font font = LoadFont("./resources/ComicMono.ttf");
     SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
@@ -133,6 +141,16 @@ int main(void) {
             ui_layout_begin(&ui, row, UI_HORI, ui_marginv(0), gap, VOCAB_WORD_LENGTH);
             for (size_t j = 0; j < VOCAB_WORD_LENGTH; ++j) {
                 UI_Rect square = ui_layout_rect(&ui);
+
+                Color background_color;
+                switch (vocab.color_grid[i][j]) {
+                case VOCAB_BLACK: background_color = BLACK; break;
+                case VOCAB_GRAY: background_color = GRAY; break;
+                case VOCAB_YELLOW: background_color = YELLOW; break;
+                case VOCAB_GREEN: background_color = GREEN; break;
+                }
+
+                DrawRectangle(square.x, square.y, square.w, square.h, background_color);
                 DrawRectangleLines(square.x, square.y, square.w, square.h, WHITE);
 
                 int spacing = 6;
